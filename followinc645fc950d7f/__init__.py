@@ -90,7 +90,7 @@ def request_content_with_timeout(_url, _time_delta):
             content=Content(content),
             created_at=CreatedAt(post_date),
             url=Url(_url),
-            domain=Domain("followin.io.com"))
+            domain=Domain("followin.io"))
     except Exception as e:
         logging.exception(f"[Followin] Error: {str(e)}")
 
