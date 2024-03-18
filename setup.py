@@ -5,6 +5,8 @@ setup(
     version="0.0.2",
     packages=find_packages(),
     install_requires=[
+        "requests",
+        "pytz",
         "exorde_data",
         "aiohttp",
         "beautifulsoup4>=4.11"

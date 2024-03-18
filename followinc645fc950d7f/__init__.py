@@ -9,7 +9,7 @@ A simple GET request will return the page. We can then perform a lookup for all 
 
 <a href=/feed/[id]> :: returns the title and the link to the latest post
     --> go to a.parent.parent then access the first div element
-    <div class="css-1rynq56"/>.text and select the 1st string using this regex: r'^(\d+)\s+(?:minute|minutes)\s+ago$'
+    <div class="css-1rynq56"/>.text and select the 1st string using this regex: r'^(\\d+)\\s+(?:minute|minutes)\\s+ago$'
 
 With this, we can extract the links to every news post. They are ordered by post date, so once we reach a news post that
 is outside of our time window, we can exit early.
@@ -37,7 +37,6 @@ import pytz
 from exorde_data import (
     Item,
     Content,
-    Author,
     CreatedAt,
     Title,
     Url,
@@ -74,6 +73,7 @@ def request_content_with_timeout(_url, _time_delta):
         <div class="css-1rynq56"/> :: this will give us the date
     <div id="article-content"/> :: the content of the post
     """
+    logging.info("request content with timeout")
     try:
         response = requests.get(_url, headers={'User-Agent': random.choice(USER_AGENT_LIST)}, timeout=8.0)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -82,7 +82,6 @@ def request_content_with_timeout(_url, _time_delta):
         content = soup.find("div", {"id": "article-content"}).text
 
         container = soup.find("a", {"class": "block max-w-max whitespace-nowrap text-ellipsis overflow-hidden mr-3"})
-        author = container.text
         post_date = convert_date_to_standard_format(_time_delta)
 
         return Item(
@@ -177,6 +176,7 @@ def read_parameters(parameters):
 
 
 async def query(parameters: dict) -> AsyncGenerator[Item, None]:
+    logging.info("Query generator initialized")
     url_main_endpoint = "https://followin.io/news"
     yielded_items = 0
     max_oldness_seconds, maximum_items_to_collect, min_post_length = read_parameters(parameters)
