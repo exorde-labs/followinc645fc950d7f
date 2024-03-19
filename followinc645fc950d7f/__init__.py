@@ -82,7 +82,7 @@ def request_content_with_timeout(_url, _time_delta):
         content = soup.find("div", {"id": "article-content"}).text
 
         container = soup.find("a", {"class": "block max-w-max whitespace-nowrap text-ellipsis overflow-hidden mr-3"})
-        post_date = convert_date_to_standard_format(_time_delta)
+        post_date = convert_date_to_standard_format()
 
         return Item(
             title=Title(post_title),
@@ -115,8 +115,8 @@ async def request_entries_with_timeout(_url, _max_age):
         logging.exception(f"[Followin] Error: {str(e)}")
 
 
-def convert_date_to_standard_format(_time_delta):
-    date = datetime.now(pytz.utc) - timedelta(seconds=_time_delta)
+def convert_date_to_standard_format():
+    date = datetime.now(pytz.utc) + timedelta(hours=1)
     return date.strftime("%Y-%m-%dT%H:%M:%S.00Z")
 
 
