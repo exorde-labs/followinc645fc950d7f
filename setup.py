@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="followinc645fc950d7f",
-    version="0.0.2",
+    version="0.0.3",
     packages=find_packages(),
     install_requires=[
         "requests",

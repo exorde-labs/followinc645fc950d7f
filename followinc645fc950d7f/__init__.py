@@ -129,6 +129,7 @@ async def parse_entry_for_elements(_cards, _max_age):
     """
     try:
         for card in _cards:
+            logging.info(" - looking at a card")
             date_element = card.parent.parent.findChild("div", {"class": "css-1rynq56"}, recursive=False).text.split()[:3]
             if date_element[1] == "minute" or date_element[1] == "minutes":
                 time_delta = _max_age + 1
