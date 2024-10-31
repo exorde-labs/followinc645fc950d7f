@@ -1,30 +1,3 @@
-"""
-In this script we are going to collect data from Followin. We will navigate to this link:
-
-https://followin.io/news
-
-Once on it, we can extract all the latest news posts.
-
-A simple GET request will return the page. We can then perform a lookup for all the elements following this structure:
-
-<a href=/feed/[id]> :: returns the title and the link to the latest post
-    --> go to a.parent.parent then access the first div element
-    <div class="css-1rynq56"/>.text and select the 1st string using this regex: r'^(\\d+)\\s+(?:minute|minutes)\\s+ago$'
-
-With this, we can extract the links to every news post. They are ordered by post date, so once we reach a news post that
-is outside of our time window, we can exit early.
-
-Another GET request on the identified links (https://followin.io + /feed/[id] of interest will yield the relevant posts and their contents.
-
-Once the GET request returns on the link of the post, look for these elements:
-
-<h1 role="heading"/> :: the title of the news post
-<a class="block max-w-max whitespace-nowrap text-ellipsis overflow-hidden mr-3"/> :: the author of the post
-    --> get the parent of this element and look for this direct child:
-    <div class="css-1rynq56"/> :: this will give us the date --> THIS DOES NOT SEEM TO WORK AS THE DATES DON'T MATCH REALITY ON THE WEBSITE
-<div id="article-content"/> :: the content of the post
-
-"""
 import time
 import re
 import requests
@@ -43,6 +16,7 @@ from exorde_data import (
     Domain,
 )
 import logging
+import pytz
 
 # GLOBAL VARIABLES
 USER_AGENT_LIST = [
@@ -73,7 +47,6 @@ def request_content_with_timeout(_url, _time_delta):
         <div class="css-1rynq56"/> :: this will give us the date
     <div id="article-content"/> :: the content of the post
     """
-    logging.info("request content with timeout")
     try:
         response = requests.get(_url, headers={'User-Agent': random.choice(USER_AGENT_LIST)}, timeout=8.0)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -82,7 +55,8 @@ def request_content_with_timeout(_url, _time_delta):
         content = soup.find("div", {"id": "article-content"}).text
 
         container = soup.find("a", {"class": "block max-w-max whitespace-nowrap text-ellipsis overflow-hidden mr-3"})
-        post_date = convert_date_to_standard_format()
+
+        post_date = convert_date_to_standard_format(_time_delta)
 
         return Item(
             title=Title(post_title),
@@ -115,8 +89,9 @@ async def request_entries_with_timeout(_url, _max_age):
         logging.exception(f"[Followin] Error: {str(e)}")
 
 
-def convert_date_to_standard_format():
-    date = datetime.now(pytz.utc) + timedelta(hours=1)
+def convert_date_to_standard_format(time_delta_s):
+    date = datetime.now(pytz.utc)
+    date = date - timedelta(seconds=time_delta_s)
     return date.strftime("%Y-%m-%dT%H:%M:%S.00Z")
 
 
@@ -129,7 +104,6 @@ async def parse_entry_for_elements(_cards, _max_age):
     """
     try:
         for card in _cards:
-            logging.info(" - looking at a card")
             date_element = card.parent.parent.findChild("div", {"class": "css-1rynq56"}, recursive=False).text.split()[:3]
             if date_element[1] == "minute" or date_element[1] == "minutes":
                 time_delta = _max_age + 1
@@ -186,6 +160,6 @@ async def query(parameters: dict) -> AsyncGenerator[Item, None]:
     async for item in request_entries_with_timeout(url_main_endpoint, max_oldness_seconds):
         yielded_items += 1
         yield item
-        logging.info(f"[Followin] Found new post :\t {item.title}, posted at { item.created_at}, URL = {item.url}" )
+        logging.info(f"[Followin] Found new post :\t {item}" )
         if yielded_items >= maximum_items_to_collect:
             break
